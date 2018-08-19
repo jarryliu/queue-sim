@@ -178,15 +178,16 @@ def readLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, d
     plt.clf()
     plt.close(fig)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_wireframe(X,Y,Z2)
-    ax.set_xlabel('bucket size')
-    ax.set_ylabel('bucket rate (k)')
-    ax.set_zlabel('processing latency')
-    ax.view_init(30, 30)
-    fig.savefig(test+'_'+distrNameA+'_ser.png')
-    plt.close(fig)
+    if test != "token_test":
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot_wireframe(X,Y,Z2)
+        ax.set_xlabel('bucket size')
+        ax.set_ylabel('bucket rate (k)')
+        ax.set_zlabel('processing latency')
+        ax.view_init(30, 30)
+        fig.savefig(test+'_'+distrNameA+'_ser.png')
+        plt.close(fig)
 
 def readTokenLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, distrNameB="", mu=1000.0):
     tbDelay = []
