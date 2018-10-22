@@ -17,8 +17,8 @@ mu = 2000.0
 bRateList = np.array([1 + 0.05*(i+1) for i in range(20)])*pRate
 bucketSizeList = [i+1 for i in range(8)]
 test = "token_test"
-#readLatency(test, [dirName], [distrNameA], bRateList, bucketSizeList)
-
+readLatency(test, [dirName], [distrNameA], bRateList, bucketSizeList)
+exit(0)
 serDelay = np.array([array([0.18287628, 0.08393965, 0.05155601, 0.03574191, 0.02651094,
        0.02054097, 0.01641276, 0.01341986, 0.01117207, 0.00943691,
        0.00806768, 0.00696749, 0.00606999, 0.00532833, 0.00470857,

@@ -1,18 +1,16 @@
 #!/usr/local/bin/python
 
-import numpy as np
 from util import getRandomDist, setDistr
 import logging
 
-class FixJob (object):
-    def __init__ (self, id=0):
+
+class FixJob(object):
+    def __init__(self, id=0):
         self.id = id
         self.time = 0.0
         self.nextTime = -1.0
         self.intDistr = ["bst", []]
-        #self.interval = []
         self.sizeDistr = ["cst", [1]]
-        #self.size = []
         self.output = None
         self.input = []
         self.queue = []
@@ -20,8 +18,7 @@ class FixJob (object):
 
         self.dropTime = []
         self.waitQueueSize = 0
-        # self.enqueueTime = []
-        # self.dequeueTime = []
+
         self.fullPolicy = "drop"
         self.finishTime = []
 
@@ -33,7 +30,7 @@ class FixJob (object):
         self.intNum = 0
 
     def whoAmI(self):
-         logging.debug("[FixJob %d]", self.id)
+        logging.debug("[FixJob %d]", self.id)
 
     def setIntDistr(self, name, arg):
         self.intDistr = [name, arg]
@@ -58,7 +55,7 @@ class FixJob (object):
         return size
 
     def getNextTime(self):
-        #print "get next time from genjob", self.id
+        # print "get next time from genjob", self.id
         return self.nextTime, self
 
     def updateNextTime(self):
@@ -93,11 +90,11 @@ class FixJob (object):
         elif self.input != []:
             # get from one of them, with round-robin
             for i in len(self.input):
-                index = (self.nextIndex + i)% len(self.input)
+                index = (self.nextIndex + i) % len(self.input)
                 if not self.input[index].pullJob(time):
                     continue
                 # get job from pull job, dequeue and increase nextIndex
-                self.nextIndex = (i+1)% len(self.input)
+                self.nextIndex = (i+1) % len(self.input)
                 return self.dequeueJob(time)
         return False
 
@@ -116,8 +113,8 @@ class FixJob (object):
     # called by dequeueJob() of self.input
     def enqueueJob(self, time, size):
         self.increaseQueue(size)
-        #self.size.append(size)
-        #self.enqueueTime.append(time)
+        # self.size.append(size)
+        # self.enqueueTime.append(time)
         logging.debug("[GenJob %d] generate job %f", self.id, size)
         return True
 
@@ -128,13 +125,13 @@ class FixJob (object):
             logging.debug("[GenJob %d] dequeue job fail: nothing in the queue", self.id)
             return False
         size = self.queue[0]
-        if self.output == None :
+        if self.output is None :
             self.finishTime.append(time)
         # output enqueueJob fail
         elif not self.output.enqueueJob(time, size):
             logging.debug("[GenJob %d] dequeue job fail: output enqueue fail", self.id)
             return False
-        #self.dequeueTime.append(time)
+        # self.dequeueTime.append(time)
         self.decreaseQueue()
         logging.debug("[GenJob %d] dequeue job %f", self.id, size)
         return True
@@ -158,7 +155,7 @@ class FixJob (object):
     def showStatistic(self):
         print "Fix Job Generator", self.id
         print "Interval Distribution", self.intDistr
-        #print "Mean", np.mean(self.interval), "Variance", np.var(self.interval)
+        # rint "Mean", np.mean(self.interval), "Variance", np.var(self.interval)
         print "Size Distribution", self.sizeDistr
-        #print self.size
-        #print "Mean", np.mean(self.size), "Variance", np.var(self.size)
+        # print self.size
+        # print "Mean", np.mean(self.size), "Variance", np.var(self.size)

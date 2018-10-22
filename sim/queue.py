@@ -2,9 +2,11 @@
 import numpy as np
 import logging
 
-DEFAULT_QUEUE_SIZE=100
+DEFAULT_QUEUE_SIZE = 100
+
+
 class Queue(object):
-    def __init__(self, id = 0, queueSize = float("inf")):
+    def __init__(self, id=0, queueSize=float("inf")):
         self.id = id
         self.queueSize = queueSize
         self.queueLen = 0
@@ -23,7 +25,7 @@ class Queue(object):
         self.lastUpdateTime = 0
 
     def whoAmI(self):
-         logging.debug("[Queue %d]", self.id)
+        logging.debug("[Queue %d]", self.id)
 
     # input should be an array
     def setInput(self, input):
@@ -73,14 +75,15 @@ class Queue(object):
     def dequeueJob(self, time):
         # no output, then dequeue and mark as finished
         size = self.queue[0]
-        if self.output == None :
+        if self.output is None:
             self.finishTime.append(time)
         # output enqueueJob fail
         elif not self.output.enqueueJob(time, size):
             return False
         self.dequeueTime.append(time)
         self.decreaseQueue()
-        logging.debug("[Queue %d] dequeue job %f, queue len %d", self.id, size, self.queueLen)
+        logging.debug("[Queue %d] dequeue job %f, queue len %d", self.id,
+                      size, self.queueLen)
         return True
 
     # pull job from input
@@ -93,11 +96,11 @@ class Queue(object):
         elif self.input != []:
             # get from one of them, with round-robin
             for i in xrange(len(self.input)):
-                index = (self.nextIndex + i)% len(self.input)
+                index = (self.nextIndex + i) % len(self.input)
                 if not self.input[index].pullJob(time):
                     continue
                 # get job from pull job, dequeue and increase nextIndex
-                self.nextIndex = (i+1)% len(self.input)
+                self.nextIndex = (i+1) % len(self.input)
                 return self.dequeueJob(time)
         return False
 
@@ -107,13 +110,15 @@ class Queue(object):
         # if self.lastEnqueueTime == -1:
         #     self.estimatedRate = 1.0/(time - self.lastEnqueueTime)
         # else:
-        #     self.estimatedRate = 0.95*self.estimatedRate + 0.1/(time - self.lastEnqueueTime)
+        #     self.estimatedRate = 0.95*self.estimatedRate +
+        #                     0.1/(time - self.lastEnqueueTime)
         if not self.hasQueue(size):
             return False
         self.lastEnqueueTime = time
         self.increaseQueue(size)
         self.enqueueTime.append(time)
-        logging.debug("[Queue %d] enqueue job %f, queue length %d", self.id, size, self.queueLen)
+        logging.debug("[Queue %d] enqueue job %f, queue length %d", self.id,
+                      size, self.queueLen)
         return True
 
     # called by input, push job to output if possible
@@ -129,7 +134,8 @@ class Queue(object):
         if self.estimatedRate == -1:
             self.estimatedRate = 1.0*len(self.enqueueTime)/time
         else:
-            currentRate = 1.0*(len(self.enqueueTime)-self.lastJobNum)/(time-self.lastUpdateTime)
+            currentRate = 1.0*(len(self.enqueueTime)-self.lastJobNum) \
+                / (time-self.lastUpdateTime)
             self.estimatedRate = 0.5*self.estimatedRate + 0.5*currentRate
 
         self.lastUpdateTime = time
@@ -143,7 +149,8 @@ class Queue(object):
             if startTime <= self.enqueueTime[i]:
                 break
         j = len(self.dequeueTime)
-        queueingTime = np.array(self.dequeueTime[i:j]) - np.array(self.enqueueTime[i:j])
+        queueingTime = np.array(self.dequeueTime[i:j]) - \
+            np.array(self.enqueueTime[i:j])
         return np.mean(queueingTime)
 
     def showQueueingTime(self, num):
@@ -160,12 +167,15 @@ class Queue(object):
             if startTime <= self.dequeueTime[i]:
                 break
         j = len(self.dequeueTime)
-        queueingTime = np.array(self.dequeueTime[i:j]) - np.array(self.enqueueTime[i:j])
-        #print "Queueing Time", self.enqueueTime
-        #print "Dequeuing Time", self.dequeueTime
-        interval = np.array(self.enqueueTime[1:]) - np.array(self.enqueueTime[0:-1])
+        queueingTime = np.array(self.dequeueTime[i:j]) \
+            - np.array(self.enqueueTime[i:j])
+        # print "Queueing Time", self.enqueueTime
+        # print "Dequeuing Time", self.dequeueTime
+        interval = np.array(self.enqueueTime[1:]) - \
+            np.array(self.enqueueTime[0:-1])
         print "arrive rate", 1.0/np.mean(interval)
-        print "with mean", np.mean(queueingTime), "and variance", np.var(queueingTime)
+        print "with mean", np.mean(queueingTime), "and variance", \
+            np.var(queueingTime)
         print "Drop number", len(self.dropTime)
         print "Finish number", len(self.finishTime)
         print "Still in queue", self.queueLen

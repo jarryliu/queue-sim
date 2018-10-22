@@ -129,7 +129,6 @@ def plotLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, d
 def readLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, distrNameB="", mu=1000.0):
     tbDelay = []
     serDelay = []
-    print(distrNameAList, distrNameB, mu)
 
     for distrNameA in distrNameAList:
         for b in bList:
@@ -167,6 +166,9 @@ def readLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, d
         Z2 = np.array(serDelay)
         print(str(Z2.tolist()))
 
+    text_file = open(test+'_'+distrNameA+."_tb.txt", "w")
+    text_file.write(str(Z1.tolist()))
+    text_file.close()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_wireframe(X,Y,Z1)
@@ -188,6 +190,9 @@ def readLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, d
         ax.view_init(30, 30)
         fig.savefig(test+'_'+distrNameA+'_ser.png')
         plt.close(fig)
+        text_file = open(test+'_'+distrNameA+."_ser.txt", "w")
+        text_file.write(str(Z1.tolist()))
+        text_file.close()
 
 def readTokenLatency(test, dirList, distrNameAList, bRateList, bList, pRate=1000.0, distrNameB="", mu=1000.0):
     tbDelay = []

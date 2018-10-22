@@ -4,15 +4,14 @@ import numpy as np
 from util import getRandomDist, setDistr
 import logging
 
-class GenJob (object):
-    def __init__ (self, id=0):
+
+class GenJob(object):
+    def __init__(self, id=0):
         self.id = id
         self.time = 0.0
         self.nextTime = -1.0
         self.intDistr = ["exp", [0.01]]
-        #self.interval = []
         self.sizeDistr = ["cst", [1]]
-        #self.size = []
         self.output = None
         self.input = []
         self.queue = []
@@ -30,7 +29,7 @@ class GenJob (object):
         self.nextIndex = 1
 
     def whoAmI(self):
-         logging.debug("[GenJob %d]", self.id)
+        logging.debug("[GenJob %d]", self.id)
 
     def setIntDistr(self, name, parameters):
         self.intDistr = setDistr(name, parameters)
@@ -48,14 +47,14 @@ class GenJob (object):
             return interval
         elif distrName != "markov":
             interval = getRandomDist(distrName, parameters)
-            #self.interval.append(interval)
+            # self.interval.append(interval)
             return interval
-        if self.changeFlag :
+        if self.changeFlag:
             self.nextMarkovTime = np.random.exponential(5)
             self.changeFlag = False
-            self.nextIndex = (self.nextIndex+1)%2
+            self.nextIndex = (self.nextIndex+1) % 2
         interval = getRandomDist("exp", [parameters[1+self.nextIndex]])
-        #self.interval.append(interval)
+        # self.interval.append(interval)
         if self.time + interval >= self.nextMarkovTime:
             self.changeFlag = True
         return interval
@@ -65,7 +64,7 @@ class GenJob (object):
         return size
 
     def getNextTime(self):
-        #print "get next time from genjob", self.id
+        # print "get next time from genjob", self.id
         return self.nextTime, self
 
     def updateNextTime(self):
@@ -100,11 +99,11 @@ class GenJob (object):
         elif self.input != []:
             # get from one of them, with round-robin
             for i in len(self.input):
-                index = (self.nextIndex + i)% len(self.input)
+                index = (self.nextIndex + i) % len(self.input)
                 if not self.input[index].pullJob(time):
                     continue
                 # get job from pull job, dequeue and increase nextIndex
-                self.nextIndex = (i+1)% len(self.input)
+                self.nextIndex = (i+1) % len(self.input)
                 return self.dequeueJob(time)
         return False
 
@@ -123,8 +122,6 @@ class GenJob (object):
     # called by dequeueJob() of self.input
     def enqueueJob(self, time, size):
         self.increaseQueue(size)
-        #self.size.append(size)
-        #self.enqueueTime.append(time)
         logging.debug("[GenJob %d] generate job %f", self.id, size)
         return True
 
@@ -132,16 +129,17 @@ class GenJob (object):
     def dequeueJob(self, time):
         # no output, then dequeue and mark as finished
         if self.queue == []:
-            logging.debug("[GenJob %d] dequeue job fail: nothing in the queue", self.id)
+            logging.debug("[GenJob %d] dequeue job fail: nothing in the queue",
+                          self.id)
             return False
         size = self.queue[0]
-        if self.output == None :
+        if self.output is None:
             self.finishTime.append(time)
         # output enqueueJob fail
         elif not self.output.enqueueJob(time, size):
-            logging.debug("[GenJob %d] dequeue job fail: output enqueue fail", self.id)
+            logging.debug("[GenJob %d] dequeue job fail: output enqueue fail",
+                          self.id)
             return False
-        #self.dequeueTime.append(time)
         self.decreaseQueue()
         logging.debug("[GenJob %d] dequeue job %f", self.id, size)
         return True
@@ -165,7 +163,7 @@ class GenJob (object):
     def showStatistic(self):
         print "Job Generator", self.id
         print "Interval Distribution", self.intDistr
-        #print "Mean", np.mean(self.interval), "Variance", np.var(self.interval)
+        # print "Mean", np.mean(self.interval), "Variance", np.var(self.interval)
         print "Size Distribution", self.sizeDistr
-        #print self.size
-        #print "Mean", np.mean(self.size), "Variance", np.var(self.size)
+        # print self.size
+        # print "Mean", np.mean(self.size), "Variance", np.var(self.size)

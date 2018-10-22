@@ -1,42 +1,46 @@
 #!/usr/local/bin/python
 # import matplotlib
 # matplotlib.use('Agg')
-from math import factorial, exp, sqrt, floor, ceil
+from math import exp, sqrt, floor, ceil
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import optimize
-from mpl_toolkits.mplot3d import Axes3D
 
 from sympy import Symbol, solve
 
 
 def probP(n, rho):
-    if n < 1 :
+    if n < 1:
         return [1]
     else:
         p = probP(n-1, rho)
         return [sum(p)] + [-rho*exp(-rho)*p[i]/(i+1) for i in range(len(p))]
 
-## Pr(v > n)
+
+# Pr(v > n)
 def probMD(rho, n):
     p = probP(floor(n), rho)
     p = [p[i]*(n-int(n))**i for i in range(len(p))]
     return 1.0 - (1-rho)*exp(rho*n)*sum(p)
 
+
 def drawPdf(rho):
-    n = np.linspace(1,10,1000)
+    n = np.linspace(1, 10, 1000)
     cdfV = []
-    for i in n :
-        cdfV.append(probMD(rho,i))
+    for i in n:
+        cdfV.append(probMD(rho, i))
     cdfV = np.array(cdfV)
     y = cdfV[:-1] - cdfV[1:]
-    plt.plot(n[1:],y)
+    plt.plot(n[1:], y)
     plt.show()
+
+drawPdf(0.9)
+exit()
 
 # token bucket access delay for poisson
 def tbDelay(rho, r, b, k=1):
     p = probMD(rho, b-1)
     return p/2/r/(1-rho)
+
 
 def PoiTBDelay(lam, r, b):
     if lam > r:
@@ -45,6 +49,7 @@ def PoiTBDelay(lam, r, b):
     p = probMD(rho, b-1)
     return p/2/r/(1-rho)
 
+
 # token bucket access delay for batched periodic
 def batchPerTBDelay(lam, k, r, b):
     if k > b:
@@ -52,30 +57,55 @@ def batchPerTBDelay(lam, k, r, b):
     else:
         return 0
 
+
+def batchPerSerDelay(lam, k, r, b, mu):
+    if b >= k:
+        return 1.0*(k+1)/2/mu + 1/mu
+    elif b < k:
+        n = floor(1.0*r*(b-1)/(mu-r))
+        n = min([n, k-b])
+        # curSum = ((b+n)*r*n - mu*n*(n+1))/mu/r
+        # curSum += ((b-1)*b*r + 2*r)/2/mu
+        # curSum += (b-1)*b/2
+        # curSum = (b-1)*n/mu + n*(n+1)/2.0/mu - n*(n+1)/2.0/r
+        # curSum += b*(b-1)/2.0/mu
+        curSum = (r-mu)*n*(n+1) + (n+b)*(b-1)*r
+        curSum /= 1.0*2*mu*r
+        print(n, b, r, mu)
+        return curSum/k + 1/mu
+
+
 # token bucket access delay for batched poisson
 def batchPoiTBDelay(lam, k, r, b):
+    if lam > r:
+        return float('inf')
     rho = 1.0*lam/r
     # p = 0.0
     # if k > b:
     #     p = probMD(rho, b/k)
     # return p*(1.0*k/2/r/(1-rho) + 1.0*(k+1)/2/r)
+    rtn = 0.0
+    if k > b:
+        rtn = (k-b)*1.0/r
+        b = k
     delay = 0.0
-    w = rho/2/(1-rho)*k/r
+    w = 1.0*k/2/(1-rho)/r
     for i in range(k):
-        p = probMD(rho, (b-i)*1.0/k)
-        delay += w*p
+        p = probMD(rho, (b-(i+1))*1.0/k)
+        delay += (w-(k-1)/r)*p
     delay /= k
-    return delay
+    return delay + rtn
 
 
 # token bucket access delay for each type
-def TokenBucketDelay(type, lam, r, b ,k=1):
-    if type =="poisson":
+def TokenBucketDelay(type, lam, r, b, k=1):
+    if type == "poisson":
         return PoiTBDelay(lam, r, b)
     elif type == "batchperiodic":
         return batchPerTBDelay(lam, k, r, b)
-    elif type =="bpoisson":
+    elif type == "bpoisson":
         return batchPoiTBDelay(lam, k, r, b)
+
 
 # server delay for Poisson
 def poiSerDelay(lam, mu, r, b):
@@ -83,8 +113,9 @@ def poiSerDelay(lam, mu, r, b):
         return float('inf')
     cov_a = getPoiCoV(lam, r, b)
     rho = 1.0*lam/mu
-    #return rho*(cov_a**2 + rho**2)/(1-rho)/(1+rho**2) + 1.0/mu
-    return  rho/(1-rho)*cov_a**2/2/mu + 1.0/mu
+    # return rho*(cov_a**2 + rho**2)/(1-rho)/(1+rho**2) + 1.0/mu
+    return rho/(1-rho)*cov_a**2/2/mu + 1.0/mu
+
 
 # get the CoV for Poisson
 def getPoiCoV(lam, r, b):
@@ -96,50 +127,55 @@ def getPoiCoV(lam, r, b):
         var = d2 - 1/lam**2
         return sqrt(var*r**2)
 
-    var1 = 1.0/r**2*((lam/r)**2 + 2*lam/r + 2)*exp(-lam/r) + 1/r**2 * (1-exp(-lam/r))
+    var1 = 1.0/r**2*((lam/r)**2 + 2*lam/r + 2)*exp(-lam/r) + 1/r**2 \
+           * (1 - exp(-lam/r))
     # return sqrt(var*r**2)
     p1 = probMD(rho, b-1)
     p2 = probMD(rho, b)
-    #print p1, p2
+    # print p1, p2
     var = (p2)*1/r**2 + (1-p1)*2/lam**2 - 1/lam**2 + (p1-p2)*var1
-    #print lam, r, b, var
+    # print lam, r, b, var
     return sqrt(var*r**2)
 
 
 # get resource for poisson
 def getMuPoi(tar, lam, cov_a):
     mu = Symbol('mu')
-    res = solve(1.0*lam/mu/(1-1.0*lam/mu)*cov_a**2/2/mu + 1.0/mu - tar, mu) # G/D/1
-    #res = solve(lam/mu/(1-lam/mu)*(cov_a**2 + 1)/2/mu + 1.0/mu - tar, mu)
+    # G/D/1
+    res = solve(1.0*lam/mu/(1-1.0*lam/mu)*cov_a**2/2/mu + 1.0/mu - tar, mu)
+    # res = solve(lam/mu/(1-lam/mu)*(cov_a**2 + 1)/2/mu + 1.0/mu - tar, mu)
     if res[-1] > lam:
         return res[-1]
     else:
         return float('inf')
 
+
 # get delay for GG1
 def getLatencyGG1(lam, var_a, mu, var_s):
     return (lam*var_s-mu*(2-lam/mu))/2/(1-lam/mu), lam
+
 
 def bPerSerDelay(lam, k, mu, r, b):
     mu *= 1.0
     r *= 1.0
     # print lam, k, mu, r, b
     # print floor(b*r/mu), b/mu - floor(b*r/mu)/r
-    # print (b-1)*b/2.0/mu/k, (floor(b*r/mu)**2-floor(b*r/mu))/r/2, floor(b*r/mu)*(b/mu - floor(b*r/mu)*1/r), 1/mu
+    # print (b-1)*b/2.0/mu/k, (floor(b*r/mu)**2-floor(b*r/mu))/r/2,
+    # floor(b*r/mu)*(b/mu - floor(b*r/mu)*1/r), 1/mu
 
     if (b+1)/mu <= 1/r:
-        if k >= b :
+        if k >= b:
             return (b-1)*b/mu/2/k + 1/mu
         else:
             return (k-1)*k/mu/2/k + 1/mu
     else:
         if k >= b:
-            fl  = floor(b*r/mu)
-            #return ((b-1)*b/mu/2 + ((fl**2-fl)/r/2+ fl*(b/mu-fl/r)))/1.0/k + 1/mu
+            fl = floor(b*r/mu)
+            # return ((b-1)*b/mu/2 + ((fl**2-fl)/r/2+ fl*(b/mu-fl/r)))/1.0/k + 1/mu
             res = (b-1)*b/mu/2
             i = b
             w = (b+1)/mu
-            while i < k and w-1/r >0 :
+            while i < k and w-1/r > 0:
                 res += w-1/r
                 i += 1
                 w -= 1/r - 1/mu
@@ -147,9 +183,12 @@ def bPerSerDelay(lam, k, mu, r, b):
         else:
             return (k-1)*k/mu/2/k + 1/mu
 
+
 lam = 100000.0
 k = 10
 mu = 150000.0
+
+
 def testBPer(lam, k, mu):
     delayList = []
     rList = [lam+(mu-lam)*(i+1)/10.0 for i in range(10)]

@@ -70,6 +70,6 @@ while time < testDuration:
 f = open(fileName, "w")
 for q in queue:
     #q.showStatistic(testDuration/2)
-    deq, enq = q.showQueueingTime(int(testDuration)*int(pRate)/2)
+    deq, enq = q.showQueueingTime(int(testDuration)*int(pRate)*4//5)
     np.savetxt(f, (enq, deq))
 f.close()
